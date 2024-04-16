@@ -1,0 +1,1 @@
+"imu660.c" XSMALL INTR2 WARNINGLEVEL (3) OPTIMIZE (0,SPEED) BROWSE INCDIR(..\..\Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\CODE;..\USER\inc;..\USER\src;..\MDK;.\MY_LIBRARY) DEBUG PRINT(.\Out_File\imu660.lst) OBJECT(.\Out_File\imu660.obj)

@@ -1,0 +1,120 @@
+C251 COMPILER V5.60.0,  encoder                                                            19/07/23  21:09:12  PAGE 1   
+
+
+C251 COMPILER V5.60.0, COMPILATION OF MODULE encoder
+OBJECT MODULE PLACED IN .\Out_File\encoder.obj
+COMPILER INVOKED BY: D:\c251\C251\BIN\C251.EXE encoder.c XSMALL INTR2 WARNINGLEVEL(3) OPTIMIZE(0,SPEED) BROWSE INCDIR(..
+                    -\..\Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\CODE;..\USER\inc;..\US
+                    -ER\src;..\MDK;.\MY_LIBRARY) DEBUG PRINT(.\Out_File\encoder.lst) OBJECT(.\Out_File\encoder.obj) 
+
+stmt  level    source
+
+    1          #include "encoder.h"
+    2          
+    3          //¶¨ÒåÂö³åÒý½Å
+    4          #define SPEEDL_PLUSE   CTIM0_P34
+    5          #define SPEEDR_PLUSE   CTIM3_P04
+    6          //¶¨Òå·½ÏòÒý½Å
+    7          #define SPEEDL_DIR     P35
+    8          #define SPEEDR_DIR     P53
+    9          
+   10          int16 templ_pluse = 0;
+   11          int16 tempr_pluse = 0;
+   12          
+   13          int16 ReadEncoderL()
+   14          {
+   15   1          WTST = 0;               //ÉèÖÃ³ÌÐò´úÂëµÈ´ý²ÎÊý£¬¸³ÖµÎª0¿É½«CPUÖ´ÐÐ³ÌÐòµÄËÙ¶ÈÉèÖÃÎª×î¿ì
+   16   1          
+   17   1              DisableGlobalIRQ();             //¹Ø±Õ×ÜÖÐ¶ÏÈ·±£²»»á±»ÆäËûÖÐ¶Ï¸ÉÈÅ´ò¶Ï£¬Ìá¸ß¼ÆÊýµÄ×¼È·ÐÔ£¬µ«ÊÇÆäËûµÄÖÐ¶ÏÈÎÎñÒ²»á±»¹
+             -Ø±Õ
+   18   1              
+   19   1          //sys_clk¿ÉÑ¡Öµ:35000000£¬30000000, 27000000. 24000000, 22118400, 20000000, 18432000, 12000000, 11059
+             -200, 6000000, 5529600¡£
+   20   1          //ÉèÖÃÏµÍ³ÆµÂÊ£¬´ËÆµÂÊÐèÒª¸úSTC-ISPÈí¼þÖÐµÄ <ÊäÈëÓÃ»§³ÌÐòÔËÐÐµÄIRCÆµÂÊ>Ñ¡ÏîµÄÆµÂÊÒ»ÖÂ¡£
+   21   1          //Èç¹ûÆµÂÊÉèÖÃ²»¶Ô£¬½«»áµ¼ÖÂ´®¿ÚµÄÊý¾Ý²»Õý³£,PWMµÄ¹¤×÷²»Õý³£µÈµÈ¡£
+   22   1          sys_clk = 35000000;     //ÉèÖÃÏµÍ³ÆµÂÊÎª35MHz
+   23   1              ctimer_count_init(SPEEDL_PLUSE);        //³õÊ¼»¯¶¨Ê±Æ÷0×÷ÎªÍâ²¿¼ÆÊý
+   24   1      
+   25   1              EnableGlobalIRQ();                                      //¿ªÆô×ÜÖÐ¶Ï
+   26   1          //¶ÁÈ¡²É¼¯µ½µÄ±àÂëÆ÷Âö³åÊý
+   27   1          templ_pluse = ctimer_count_read(SPEEDL_PLUSE);//¶ÁÈ¡±àÂëÆ÷Öµ
+   28   1      
+   29   1      
+   30   1          //¼ÆÊýÆ÷ÇåÁã
+   31   1          ctimer_count_clean(SPEEDL_PLUSE);
+   32   1       
+   33   1      
+   34   1          //²É¼¯·½ÏòÐÅÏ¢
+   35   1          if(1 == SPEEDL_DIR)    
+   36   1          {
+   37   2              templ_pluse = -templ_pluse;
+   38   2          }
+   39   1      //    else//×ó²àµç»ú·µ»Ø0            
+   40   1      //    {
+   41   1      //        templ_pluse = templ_pluse;
+   42   1      //    }
+   43   1          //EnableGlobalIRQ();                                        //¿ªÆô×ÜÖÐ¶Ï
+   44   1          return templ_pluse;
+   45   1      }
+   46          int16 ReadEncoderR()
+   47          {
+   48   1          WTST = 0;               //ÉèÖÃ³ÌÐò´úÂëµÈ´ý²ÎÊý£¬¸³ÖµÎª0¿É½«CPUÖ´ÐÐ³ÌÐòµÄËÙ¶ÈÉèÖÃÎª×î¿ì
+   49   1          
+   50   1              DisableGlobalIRQ();             
+   51   1          sys_clk = 35000000;     //ÉèÖÃÏµÍ³ÆµÂÊÎª35MHz
+   52   1              ctimer_count_init(SPEEDR_PLUSE);        //³õÊ¼»¯¶¨Ê±Æ÷0×÷ÎªÍâ²¿¼ÆÊý
+   53   1              //EnableGlobalIRQ();                                    //¿ªÆô×ÜÖÐ¶Ï
+   54   1          //¶ÁÈ¡²É¼¯µ½µÄ±àÂëÆ÷Âö³åÊý
+   55   1          tempr_pluse = ctimer_count_read(SPEEDR_PLUSE);//¶ÁÈ¡±àÂëÆ÷Öµ
+C251 COMPILER V5.60.0,  encoder                                                            19/07/23  21:09:12  PAGE 2   
+
+   56   1          //¼ÆÊýÆ÷ÇåÁã
+   57   1          ctimer_count_clean(SPEEDR_PLUSE);
+   58   1       
+   59   1      
+   60   1          //²É¼¯·½ÏòÐÅÏ¢
+   61   1          if(1 == SPEEDR_DIR)    
+   62   1          {
+   63   2              tempr_pluse = -tempr_pluse;
+   64   2          }
+   65   1      //    else//ÓÒ²àµç»ú·µ»Ø0            
+   66   1      //    {
+   67   1      //        tempr_pluse = tempr_pluse;
+   68   1      //    }
+   69   1          EnableGlobalIRQ();                                  //¿ªÆô×ÜÖÐ¶Ï
+   70   1          return tempr_pluse;
+   71   1      }
+   72          void EncoderInitL()
+   73          {
+   74   1          ctimer_count_init(SPEEDL_PLUSE);
+   75   1          SPEEDL_DIR = 1;
+   76   1      }
+   77          void EncoderInitR()
+   78          {
+   79   1          ctimer_count_init(SPEEDR_PLUSE);
+   80   1          SPEEDR_DIR = 1;
+   81   1      }
+
+
+Module Information          Static   Overlayable
+------------------------------------------------
+  code size            =       162     ------
+  ecode size           =    ------     ------
+  data size            =    ------     ------
+  idata size           =    ------     ------
+  pdata size           =    ------     ------
+  xdata size           =    ------     ------
+  xdata-const size     =    ------     ------
+  edata size           =         4     ------
+  bit size             =    ------     ------
+  ebit size            =    ------     ------
+  bitaddressable size  =    ------     ------
+  ebitaddressable size =    ------     ------
+  far data size        =    ------     ------
+  huge data size       =    ------     ------
+  const size           =    ------     ------
+  hconst size          =        12     ------
+End of Module Information.
+
+
+C251 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

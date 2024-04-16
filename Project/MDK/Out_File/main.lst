@@ -1,0 +1,271 @@
+C251 COMPILER V5.60.0,  main                                                               19/07/23  21:09:11  PAGE 1   
+
+
+C251 COMPILER V5.60.0, COMPILATION OF MODULE main
+OBJECT MODULE PLACED IN .\Out_File\main.obj
+COMPILER INVOKED BY: D:\c251\C251\BIN\C251.EXE ..\USER\src\main.c XSMALL INTR2 WARNINGLEVEL(3) OPTIMIZE(0,SPEED) BROWSE 
+                    -INCDIR(..\..\Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\CODE;..\USER\
+                    -inc;..\USER\src;..\MDK;.\MY_LIBRARY) DEBUG PRINT(.\Out_File\main.lst) OBJECT(.\Out_File\main.obj) 
+
+stmt  level    source
+
+    1          /********************************************************************************************************
+             -*************
+    2          电机初始化
+    3          舵机初始化-50Hz
+    4          ADC初始化
+    5          编码器初始化
+    6          差和比控制
+    7          PID循迹
+    8          定时器初始化
+    9          目前还差：滤波、环岛、陀螺仪与TOF应用
+   10          环岛：入环：水平电感瞬间下降，横向电感加倍，
+   11          主要条件：左右垂直电感出现显著差异，中间电感上升
+   12          通过一个阈值判断，入环仅用ML，MR电感循迹
+   13           ********************************************************************************************************
+             -************/
+   14          
+   15          #include "headfile.h"
+   16          
+   17          void showoled();
+   18          uint8 motor_flag = 0;
+   19          uint8 servo_flag = 0;
+   20          uint8 tof_flag = 0;
+   21          uint8 imu_flag = 0;
+   22          uint8 circle_return = 0;
+   23          uint8 oled_flag = 0;
+   24          //特殊标志
+   25          uint8 cross_flag = 0;//十字
+   26          uint8 straight_flag = 0;//直行
+   27          uint8 circle_flag = 1;//圆环
+   28          int16 circle_z = 0;//z轴积分
+   29          uint8 cnt_circl = 0;
+   30          uint8 circle_finish = 0;
+   31          extern int EncodeNowL;
+   32          extern int EncodeNowR;
+   33          extern uint16 motor_duty_L;
+   34          extern uint16 motor_duty_R;
+   35          extern void PID_motor(uint16 speed_set, float speed_now_L, float speed_now_R);
+   36          extern float motor_kp_L;
+   37          extern float motor_kp_R;
+   38          extern float SpeedNowR;
+   39          extern float SpeedNowL;
+   40          extern uint16 time0_t;
+   41          extern int servo_duty_delta;
+   42          extern int16 diangan[4];
+   43          extern float  servo_kp;
+   44          extern float  servo_kd;
+   45          extern float AdcNow;
+   46          extern uint16 TofNow;
+   47          extern int32 Duty;
+   48          extern int16 error;
+   49          extern uint8 ramp_flag;
+   50          extern float  servo_error[2];
+   51          extern float direction();
+   52          extern float L,R,LM,RM;
+   53          void main()
+   54          {
+   55   1          
+C251 COMPILER V5.60.0,  main                                                               19/07/23  21:09:11  PAGE 2   
+
+   56   1          
+   57   1              board_init();       // 初始化寄存器,勿删除此句代码。相当于龙邱sysint()
+   58   1          delay_ms(200);
+   59   1      //    while(imu660ra_init())                            //六轴陀螺仪初始化不能放到函数调用
+   60   1      //      {
+   61   1      //        P52 = !P52;
+   62   1      //              delay_ms(50);
+   63   1      //      }
+   64   1      //    while(dl1a_init())                                //tof
+   65   1      //      {
+   66   1      //        P52 = !P52;
+   67   1      //              delay_ms(50);
+   68   1      //      }
+   69   1          ServoInit();
+   70   1          ips200_init();//显示屏
+   71   1          ctimer_count_init(CTIM0_P34);           //初始化计时器映射到P3.4
+   72   1          adc_init(ADC_P10, ADC_SYSclk_DIV_2);        //初始化ADC,P1.0通道 ，ADC时钟频率：SYSclk/2      
+   73   1          ctimer_count_init(TIM_0);//编码器计数
+   74   1          ctimer_count_init(TIM_3); //编码器计数
+   75   1          pit_timer_ms(TIM_2,1);                                  //使用TIMER2作为周期中断
+   76   1          MotorInit();//电机
+   77   1          AdcInit();//ADC
+   78   1          EncoderInitL();//编码器
+   79   1          EncoderInitR();//编码器
+   80   1          EnableGlobalIRQ();  //开启总中断
+   81   1          delay_ms(200);
+   82   1          while(1)
+   83   1              {
+   84   2              //MotorControlL(725);
+   85   2              
+   86   2              //ServoControl(6000);
+   87   2      //        static int i = 10 ;
+   88   2      //        ServoControl(i);
+   89   2      //        if(P73 == 0)
+   90   2      //        {
+   91   2      //            i+=1;
+   92   2      //        }
+   93   2      //        if(P72 == 0)
+   94   2      //        {
+   95   2      //            i-=1;
+   96   2      //          
+   97   2      //        }
+   98   2      //        ips200_showint16(6*15, 8, i);
+   99   2         // MotorControlR(1200);
+  100   2              P77 = 0;
+  101   2              P52 = !P52;
+  102   2              P64 = 1;//正转右
+  103   2              if(motor_flag==1)
+  104   2              {
+  105   3                  motor_flag = 0;
+  106   3                  EncodeNowL = ReadEncoderL();
+  107   3                  EncodeNowR = ReadEncoderR();
+  108   3                  SpeedComputerL(EncodeNowL, 10);
+  109   3                  SpeedComputerR(EncodeNowR, 10);
+  110   3                  PID_motor(1000,-SpeedNowL,SpeedNowR);
+  111   3              }
+  112   2              if(servo_flag==1)
+  113   2              {    
+  114   3                  servo_flag = 0;
+  115   3                  //PidControlServo();
+  116   3                  if(cross_judge())
+  117   3                  {    
+  118   4                      ServoControl(0);
+  119   4                      cross_control();
+  120   4                      delay_ms(20);
+  121   4                      
+C251 COMPILER V5.60.0,  main                                                               19/07/23  21:09:11  PAGE 3   
+
+  122   4                  }
+  123   3                  //修改思路：入环判定条件较为简单，第一次判定成功之后编码器积分，然后第二次判断
+  124   3                  //到之后打角，然后入环用中间两电感循迹，然后出环之后再两次判断到都会直行
+  125   3                  else if(circle_judge()&&(circle_flag)&&(!circle_finish))
+  126   3                  {
+  127   4                      circle_return = 1;//开始入环
+  128   4                  }
+  129   3                  else if(!circle_judge()||!circle_flag)//圆环
+  130   3                  {
+  131   4                      PidControlServo();
+  132   4                      
+  133   4                  }
+  134   3                  switch(circle_return)//circle_return 任何时候都会是有效数值
+  135   3                  {
+  136   4                      case 1:
+  137   4                          imu_flag = 1;
+  138   4                          ServoControl(70);//打死
+  139   4                          PID_motor(600,-SpeedNowL,SpeedNowR);
+  140   4                          circle_return = 3;
+  141   4                          delay_ms(800);
+  142   4                          
+  143   4                          if(imu_flag)
+  144   4                          {
+  145   5                              imu660ra_get_gyro();
+  146   5                              circle_z += (int16)(-imu660ra_gyro_z);//累加积分
+  147   5                              if (circle_z >= 200)
+  148   5                              {
+  149   6                                  circle_z = 200;
+  150   6                              }
+  151   5                              if (fabs(circle_z) >= 200)
+  152   5                              {
+  153   6                                  circle_flag = 0;
+  154   6                                  circle_finish = 1;
+  155   6                                  
+  156   6                                  cnt_circl += 1;
+  157   6      
+  158   6                                  if(cnt_circl == 2)
+  159   6                                  {
+  160   7                                      circle_return = 2;//二次检测到入环区
+  161   7                                  }
+  162   6                              }
+  163   5                          }
+  164   4                          break;
+  165   4                      case 2://出环
+  166   4                          //PidControlServo();
+  167   4                          ServoControl(0);
+  168   4                          PID_motor(600,-SpeedNowL,SpeedNowR);
+  169   4                          cross_control();
+  170   4                          delay_ms(100);  
+  171   4                          break;
+  172   4                      case 3:
+  173   4                          circle_control();
+  174   4                      default:
+  175   4                          PidControlServo();
+  176   4                  }
+  177   3                  
+  178   3              }      
+  179   2              if (P71 == 0)
+  180   2              {
+  181   3                  showoled();
+  182   3              }
+  183   2              if(tof_flag == 1)
+  184   2              {
+  185   3                  dl1a_get_distance();//获取距离
+  186   3                  tof_get(dl1a_distance_mm);
+  187   3                  if(ramp_judge(TofNow))
+C251 COMPILER V5.60.0,  main                                                               19/07/23  21:09:11  PAGE 4   
+
+  188   3                  {
+  189   4                      PID_motor(1000,-SpeedNowL,SpeedNowR);
+  190   4                      ramp_control();
+  191   4                  }
+  192   3                  
+  193   3              }
+  194   2          }
+  195   1      }
+  196          
+  197          void showoled()
+  198          {
+  199   1              ips200_showstr(0, 0, "ADC1");
+  200   1                      ips200_showstr(0, 1, "ADC2");
+  201   1              ips200_showstr(0, 2, "ADC3");
+  202   1              ips200_showstr(0, 3, "ADC4");
+  203   1              ips200_showstr(0, 4, "circle_z");
+  204   1              ips200_showstr(0, 5, "kp");
+  205   1              ips200_showstr(0, 6, "tof");
+  206   1              ips200_showstr(0, 7, "acc_z");
+  207   1              ips200_showstr(0, 8, "circle_fl");
+  208   1              ips200_showstr(0, 9, "circlenow");
+  209   1              ips200_showstr(0, 10, "error");
+  210   1              ips200_showfloat(6*15, 0, L,4,4);
+  211   1              ips200_showfloat(6*15, 1, LM,4,4);
+  212   1              ips200_showfloat(6*15, 2, RM,4,4);
+  213   1              ips200_showfloat(6*15, 3, R,4,4);
+  214   1      //        ips200_showfloat(6*15, 0, diangan[0],4,4);
+  215   1      //        ips200_showfloat(6*15, 1, diangan[1],4,4);
+  216   1      //        ips200_showfloat(6*15, 2, diangan[2],4,4);
+  217   1      //        ips200_showfloat(6*15, 3, diangan[3],4,4);
+  218   1              ips200_showint16(6*15, 4,  circle_z);
+  219   1              ips200_showint16(6*15, 5,  servo_kp);
+  220   1              ips200_showint16(6*15, 6,  TofNow);
+  221   1              ips200_showint16(6*15, 7,  imu660ra_acc_z);
+  222   1              ips200_showint16(6*15, 8,  circle_judge());
+  223   1              ips200_showuint8(6*15, 9,  circle_return);
+  224   1              ips200_showfloat(6*15, 10, direction(),10,5);
+  225   1      //            ips200_showint16(6*15, 8,  SpeedNowL);
+  226   1      //            ips200_showuint16(6*15, 9, SpeedNowR);
+  227   1      
+  228   1      }
+
+
+Module Information          Static   Overlayable
+------------------------------------------------
+  code size            =      1002     ------
+  ecode size           =    ------     ------
+  data size            =    ------     ------
+  idata size           =    ------     ------
+  pdata size           =    ------     ------
+  xdata size           =    ------     ------
+  xdata-const size     =    ------     ------
+  edata size           =        13     ------
+  bit size             =    ------     ------
+  ebit size            =    ------     ------
+  bitaddressable size  =    ------     ------
+  ebitaddressable size =    ------     ------
+  far data size        =    ------     ------
+  huge data size       =    ------     ------
+  const size           =    ------     ------
+  hconst size          =       129     ------
+End of Module Information.
+
+
+C251 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

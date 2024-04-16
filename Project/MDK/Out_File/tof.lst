@@ -1,0 +1,52 @@
+C251 COMPILER V5.60.0,  tof                                                                19/07/23  21:09:12  PAGE 1   
+
+
+C251 COMPILER V5.60.0, COMPILATION OF MODULE tof
+OBJECT MODULE PLACED IN .\Out_File\tof.obj
+COMPILER INVOKED BY: D:\c251\C251\BIN\C251.EXE tof.c XSMALL INTR2 WARNINGLEVEL(3) OPTIMIZE(0,SPEED) BROWSE INCDIR(..\..\
+                    -Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\CODE;..\USER\inc;..\USER\s
+                    -rc;..\MDK;.\MY_LIBRARY) DEBUG PRINT(.\Out_File\tof.lst) OBJECT(.\Out_File\tof.obj) 
+
+stmt  level    source
+
+    1          #include "tof.h"
+    2          void TofInit()
+    3          {
+    4   1          while(dl1a_init())
+    5   1              {
+    6   2                      delay_ms(500);
+    7   2              P52 = !P52;
+    8   2              }
+    9   1      }
+   10          void TofShowDistance()
+   11          {
+   12   1          if(dl1a_finsh_flag)
+   13   1              {                        
+   14   2                      dl1a_finsh_flag = 0;
+   15   2              }
+   16   1          
+   17   1      }
+
+
+Module Information          Static   Overlayable
+------------------------------------------------
+  code size            =        42     ------
+  ecode size           =    ------     ------
+  data size            =    ------     ------
+  idata size           =    ------     ------
+  pdata size           =    ------     ------
+  xdata size           =    ------     ------
+  xdata-const size     =    ------     ------
+  edata size           =    ------     ------
+  bit size             =    ------     ------
+  ebit size            =    ------     ------
+  bitaddressable size  =    ------     ------
+  ebitaddressable size =    ------     ------
+  far data size        =    ------     ------
+  huge data size       =    ------     ------
+  const size           =    ------     ------
+  hconst size          =    ------     ------
+End of Module Information.
+
+
+C251 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

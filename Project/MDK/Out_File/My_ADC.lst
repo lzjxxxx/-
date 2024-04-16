@@ -1,0 +1,52 @@
+C251 COMPILER V5.60.0,  My_ADC                                                             19/07/23  21:09:12  PAGE 1   
+
+
+C251 COMPILER V5.60.0, COMPILATION OF MODULE My_ADC
+OBJECT MODULE PLACED IN .\Out_File\My_ADC.obj
+COMPILER INVOKED BY: D:\c251\C251\BIN\C251.EXE ..\USER\src\My_ADC.c XSMALL INTR2 WARNINGLEVEL(3) OPTIMIZE(0,SPEED) BROWS
+                    -E INCDIR(..\..\Libraries\libraries;..\..\Libraries\seekfree_libraries;..\..\Libraries\seekfree_peripheral;..\CODE;..\USE
+                    -R\inc;..\USER\src;..\MDK;.\MY_LIBRARY) DEBUG PRINT(.\Out_File\My_ADC.lst) OBJECT(.\Out_File\My_ADC.obj) 
+
+stmt  level    source
+
+    1          #include "My_ADC.h"
+    2          int16 diangan[4];
+    3          void AdcInit()
+    4          {
+    5   1          adc_init(ADC_P00, ADC_SYSclk_DIV_2);        //初始化ADC,P1.0通道 ，ADC时钟频率：SYSclk/2
+    6   1          adc_init(ADC_P01, ADC_SYSclk_DIV_2);        //初始化ADC,P1.1通道 ，ADC时钟频率：SYSclk/2
+    7   1          adc_init(ADC_P05, ADC_SYSclk_DIV_2);        //初始化ADC,P1.2通道 ，ADC时钟频率：SYSclk/2
+    8   1          adc_init(ADC_P06, ADC_SYSclk_DIV_2);        //初始化ADC,P1.2通道 ，ADC时钟频率：SYSclk/2
+    9   1      }
+   10          void AdcRead()
+   11          {
+   12   1          diangan[0] =  adc_once(ADC_P00, ADC_12BIT);
+   13   1          diangan[1] =  adc_once(ADC_P01, ADC_12BIT);
+   14   1          diangan[2] =  adc_once(ADC_P05, ADC_12BIT);
+   15   1          diangan[3] =  adc_once(ADC_P06, ADC_12BIT);
+   16   1          
+   17   1      }
+
+
+Module Information          Static   Overlayable
+------------------------------------------------
+  code size            =        90     ------
+  ecode size           =    ------     ------
+  data size            =    ------     ------
+  idata size           =    ------     ------
+  pdata size           =    ------     ------
+  xdata size           =    ------     ------
+  xdata-const size     =    ------     ------
+  edata size           =         8     ------
+  bit size             =    ------     ------
+  ebit size            =    ------     ------
+  bitaddressable size  =    ------     ------
+  ebitaddressable size =    ------     ------
+  far data size        =    ------     ------
+  huge data size       =    ------     ------
+  const size           =    ------     ------
+  hconst size          =    ------     ------
+End of Module Information.
+
+
+C251 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
